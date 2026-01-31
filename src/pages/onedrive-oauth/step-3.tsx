@@ -211,6 +211,8 @@ export async function getServerSideProps({ query }) {
 
   const { expiryTime, accessToken, refreshToken } = response
 
+  console.log('[OnePortal OAuth] Access token:', accessToken)
+  console.log('[OnePortal OAuth] Refresh token:', refreshToken)
   // verify identity of the authenticated user with the Microsoft Graph API
   const { data, status } = await getAuthPersonInfo(accessToken)
   if (status !== 200) {
