@@ -1,7 +1,7 @@
-import CryptoJS from 'crypto-js'
 import axios from 'redaxios'
+import CryptoJS from 'crypto-js'
 
-import apiConfig from '~config/api.config'
+import apiConfig from '../../config/api.config'
 
 // Just a disguise to obfuscate required tokens (including but not limited to client secret,
 // access tokens, and refresh tokens), used along with the following two functions
@@ -49,7 +49,7 @@ export function extractAuthCodeFromRedirected(url: string): string {
 export async function requestTokenWithAuthCode(
   code: string,
 ): Promise<
-  | { expiryTime: string; accessToken: string; refreshToken: string }
+  | { expiryTime: number; accessToken: string; refreshToken: string }
   | { error: string; errorDescription: string; errorUri: string }
 > {
   const { clientId, redirectUri, authApi } = apiConfig
@@ -72,7 +72,8 @@ export async function requestTokenWithAuthCode(
     })
     .then(resp => {
       const { expires_in, access_token, refresh_token } = resp.data
-      return { expiryTime: expires_in, accessToken: access_token, refreshToken: refresh_token }
+      const expirySeconds = Number.isFinite(Number(expires_in)) ? Number(expires_in) : 3600
+      return { expiryTime: expirySeconds, accessToken: access_token, refreshToken: refresh_token }
     })
     .catch(err => {
       const { error, error_description, error_uri } = err.response.data
@@ -91,12 +92,12 @@ export async function getAuthPersonInfo(accessToken: string) {
   })
 }
 
-export async function sendTokenToServer(accessToken: string, refreshToken: string, expiryTime: string) {
+export async function sendTokenToServer(accessToken: string, refreshToken: string, expiryTime: number) {
   return await axios.post(
     '/api',
     {
       accessToken: accessToken,
-      accessTokenExpiry: parseInt(expiryTime),
+      accessTokenExpiry: Number.isFinite(expiryTime) ? Math.max(0, Math.floor(expiryTime)) : 3600,
       refreshToken: refreshToken,
     },
     {
